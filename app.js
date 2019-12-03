@@ -25,13 +25,13 @@ const menuItemsSchema = new mongoose.Schema({
 const restaurantsSchema = new mongoose.Schema({
   name: String,
   address: String,
-  menu: [menuItemsSchema]
+  menu: Object
 });
 
 const Restaurant = new mongoose.model("Restaurant", restaurantsSchema);
 const MenuItem = new mongoose.model("MenuItem", menuItemsSchema);
 
-arr=[];
+let arr=[];
 app.route("/menu")
   .get((req,res) => {
     MenuItem.find((err,found) => {
@@ -133,7 +133,14 @@ app.route("/restaurants")
   .get((req,res) => {
     Restaurant.find((err,found) => {
       if(!err){
-          res.send(found);
+        MenuItem.find((err1,found1) => {
+            if(!err1){
+              found.forEach(x => {
+                x.menu=found1;
+              });
+            }res.send(found);
+        });
+
       }
       else{
           res.send(err);
@@ -141,12 +148,6 @@ app.route("/restaurants")
     })
   })
   .post((req,res) => {
-    MenuItem.find((err,found) => {
-        if(!err){
-            arr=found;
-            console.log(arr);
-        }
-    });
     const newRes = new Restaurant({
       name: req.body.name,
       address: req.body.address,
