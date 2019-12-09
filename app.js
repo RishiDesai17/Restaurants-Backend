@@ -177,8 +177,13 @@ app.route("/restaurants")
     .get((req,res) => {
       Restaurant.findOne({_id: req.params.id}, (err,found) => {
        if(!err && found){
-           res.send(found);
-       }
+         MenuItem.find((err1,found1) => {
+             if(!err1){
+               found.menu=found1;
+             }
+             res.send(found);
+            });
+          }
        else{
          res.send(err);
        }
