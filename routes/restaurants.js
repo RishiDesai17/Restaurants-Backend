@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Restaurant = require('../models/restaurant');
 const MenuItem = require('../models/menu');
+const checkAuth = require('../middleware/check-auth');
 
 router.get('/', (req,res,next)=>{
   Restaurant.find((err,found) => {
@@ -10,20 +11,23 @@ router.get('/', (req,res,next)=>{
         MenuItem.find((err1,found1) => {
             if(!err1){
               found.forEach(x => {
-                let newArr = found1.filter(item=>{item.restaurantId===x._id})
-                x.menu=newArr;
+                found1.forEach(item=>{
+                  if(item.restaurantId.toString()===x._id.toString()){
+                    x.menu.push(item);
+                  }
+                });
               });
               const response = {
                 count: found.length,
-                restaurants: found.map(item=>{
+                restaurants: found.map(restro=>{
                   return {
-                    name: item.name,
-                    address: item.address,
-                    _id: item._id,
-                    menu: found1,
+                    name: restro.name,
+                    address: restro.address,
+                    _id: restro._id,
+                    menu: restro.menu,
                     request:{
                       type: 'GET',
-                      url: 'http://localhost:3002/restaurant/'+item._id
+                      url: 'http://localhost:3002/restaurant/'+restro._id
                     }
                 }
             })
@@ -40,7 +44,7 @@ router.get('/', (req,res,next)=>{
  });
 });
 
-router.post('/', (req,res,next)=>{
+router.post('/',checkAuth, (req,res,next)=>{
     const restaurant = new Restaurant({
         _id: new mongoose.Types.ObjectId(),
         name: req.body.name,
@@ -72,27 +76,35 @@ router.post('/', (req,res,next)=>{
 });
 
 router.get('/:restaurantId', (req,res,next)=>{
-    const id = req.params.restaurantId;
-    Restaurant.findById(id).select('name price _id').exec().then(doc=>{
-        console.log(doc);
-        if(doc){
-            res.status(200).json({
-              name: doc.name,
-              address: doc.address,
-              _id: doc._id,
-              menu: MenuItem.filter(item=>{doc._id===item.RestaurantId})
-            });
-        }
-        else{
-            res.status(404).json({message: "No valid entry found for provided ID"})
-        }
-    }).catch(err=>{
-        console.log(err);
-        res.status(500).json({error: err});
+  Restaurant.findOne({_id: req.params.restaurantId},(err,found) => {
+      if(!err){
+        MenuItem.find((err1,found1) => {
+            if(!err1){
+              console.log(found);
+
+                found1.forEach(item=>{
+                  if(item.restaurantId.toString()===found._id.toString()){
+                    found.menu.push(item);
+                  }
+                });
+
+              const response = {
+                count: found.length,
+                restaurants: found
+          }
+          res.status(200).json(response);
+      }
+      else{
+          res.status(500).json({
+            error: err
+          });
+      }
     })
+  }
+ });
 });
 
-router.patch('/:restaurantId', (req,res,next)=>{
+router.patch('/:restaurantId',checkAuth, (req,res,next)=>{
     const id = req.params.restaurantId;
     Restaurant.update({_id: id}, {$set: req.body}).exec().then(result=>{
         res.status(200).json({
@@ -110,7 +122,7 @@ router.patch('/:restaurantId', (req,res,next)=>{
     })
 });
 
-router.delete('/:restaurantId', (req,res,next)=>{
+router.delete('/:restaurantId',checkAuth, (req,res,next)=>{
     const id = req.params.restaurantId;
     Restaurant.remove({_id: id}).exec().then(result=>{
         res.status(200).json({

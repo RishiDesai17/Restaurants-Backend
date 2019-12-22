@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 
 const restaurantRoutes = require('./routes/restaurants');
 const menuRoutes = require('./routes/menuitems');
+const userRoutes = require('./routes/users');
 
 mongoose.connect("mongodb://localhost:27017/restaurantsDB",{
   useUnifiedTopology: true,
@@ -29,6 +30,7 @@ app.use((req,res,next)=>{
 
 app.use('/restaurant', restaurantRoutes);
 app.use('/menu', menuRoutes);
+app.use('/user', userRoutes);
 
 app.use((req,res,next)=>{
   const error = new Error("Not Found");

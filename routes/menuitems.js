@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const MenuItem = require('../models/menu');
 const Restaurant = require('../models/restaurant');
+const checkAuth = require('../middleware/check-auth');
 
 router.get('/', (req,res,next)=>{
     MenuItem.find().exec().then(docs=>{
@@ -31,7 +32,7 @@ router.get('/', (req,res,next)=>{
     })
 });
 
-router.post('/', (req,res,next)=>{
+router.post('/',checkAuth, (req,res,next)=>{
     Restaurant.findById(req.body.restaurantId).then(item=>{
         if(!item){
             res.status(500).json({
@@ -102,7 +103,7 @@ router.get('/:menuId', (req,res,next)=>{
     })
 });
 
-router.patch('/:menuId', (req,res,next)=>{
+router.patch('/:menuId',checkAuth, (req,res,next)=>{
     const id = req.params.menuId;
     MenuItem.update({_id: id}, {$set: req.body}).exec().then(result=>{
         res.status(200).json({
@@ -120,7 +121,7 @@ router.patch('/:menuId', (req,res,next)=>{
     })
 });
 
-router.delete('/:menuId', (req,res,next)=>{
+router.delete('/:menuId',checkAuth, (req,res,next)=>{
     MenuItem.remove({_id: req.params.menuId}).exec().then(result=>{
         res.status(200).json({
             message: 'MenuItem Deleted',
